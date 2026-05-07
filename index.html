@@ -1,0 +1,288 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Jogo da Forca</title>
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <main class="app" aria-label="Jogo da forca">
+      <header class="top">
+        <div>
+          <h1>Forca</h1>
+          <p class="sub">Tente letras ou chute a palavra a qualquer momento.</p>
+        </div>
+        <div class="top-right">
+          <div class="pill pill-points" aria-label="Pontos">
+            <span class="pill-label">Pontos</span>
+            <strong id="pointsValue">0</strong>
+          </div>
+          <button id="btnNewGame" class="btn btn-secondary" type="button">Novo jogo</button>
+        </div>
+      </header>
+
+      <nav class="tabs" aria-label="Navegação">
+        <button class="tab is-active" type="button" data-tab="hangman">Forca</button>
+        <button class="tab" type="button" data-tab="casino">Cassino</button>
+        <button class="tab" type="button" data-tab="shop">Loja</button>
+      </nav>
+
+      <section id="hangman" class="section">
+      <section class="grid">
+        <section class="panel" aria-label="Desenho da forca">
+          <div class="card">
+            <div class="hangman-wrap" role="img" aria-label="Forca e personagem">
+              <svg viewBox="0 0 240 260" class="hangman" aria-hidden="true">
+                <!-- Base / estrutura -->
+                <line x1="20" y1="240" x2="140" y2="240" class="gallow" />
+                <line x1="60" y1="240" x2="60" y2="20" class="gallow" />
+                <line x1="60" y1="20" x2="160" y2="20" class="gallow" />
+                <line x1="160" y1="20" x2="160" y2="50" class="gallow" />
+                <line x1="60" y1="55" x2="95" y2="20" class="gallow subtle" />
+
+                <!-- Corda -->
+                <line x1="160" y1="50" x2="160" y2="70" class="gallow subtle" />
+
+                <!-- Partes do corpo (mostradas a cada erro) -->
+                <circle id="part-head" cx="160" cy="92" r="22" class="person hidden" />
+                <line id="part-body" x1="160" y1="114" x2="160" y2="165" class="person hidden" />
+                <line id="part-armL" x1="160" y1="130" x2="135" y2="150" class="person hidden" />
+                <line id="part-armR" x1="160" y1="130" x2="185" y2="150" class="person hidden" />
+                <line id="part-legL" x1="160" y1="165" x2="140" y2="200" class="person hidden" />
+                <line id="part-legR" x1="160" y1="165" x2="180" y2="200" class="person hidden" />
+              </svg>
+            </div>
+
+            <div class="stats">
+              <div class="pill">
+                <span class="pill-label">Erros</span>
+                <strong id="errorsCount">0</strong>
+                <span class="pill-muted">/ <span id="maxErrors">6</span></span>
+              </div>
+              <div class="pill">
+                <span class="pill-label">Tentativas restantes</span>
+                <strong id="remainingCount">6</strong>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section class="panel" aria-label="Jogo">
+          <div class="card">
+            <div class="word" aria-label="Palavra escondida">
+              <div id="wordSlots" class="slots" aria-live="polite"></div>
+              <div class="hint" id="wordMeta"></div>
+            </div>
+
+            <div class="row">
+              <form id="letterForm" class="form" autocomplete="off">
+                <label class="label" for="letterInput">Tentar letra</label>
+                <div class="controls">
+                  <input
+                    id="letterInput"
+                    class="input"
+                    inputmode="text"
+                    maxlength="1"
+                    placeholder="A"
+                    aria-label="Digite uma letra"
+                  />
+                  <button class="btn" type="submit">Tentar</button>
+                </div>
+                <p class="help">Dica: você também pode clicar no teclado.</p>
+              </form>
+
+              <form id="wordForm" class="form" autocomplete="off">
+                <label class="label" for="wordGuessInput">Chutar palavra</label>
+                <div class="controls">
+                  <input
+                    id="wordGuessInput"
+                    class="input"
+                    inputmode="text"
+                    placeholder="Digite a palavra"
+                    aria-label="Digite uma palavra"
+                  />
+                  <button class="btn btn-secondary" type="submit">Chutar</button>
+                </div>
+                <p class="help">Se errar, consome 1 tentativa e não revela letras.</p>
+              </form>
+            </div>
+
+            <div class="used">
+              <div class="used-top">
+                <h2 class="used-title">Letras usadas</h2>
+                <button id="btnClearUsed" type="button" class="btn btn-ghost">Limpar</button>
+              </div>
+              <div id="usedLetters" class="used-letters" aria-live="polite"></div>
+            </div>
+
+            <div class="keyboard" aria-label="Teclado">
+              <div id="keyboard" class="keyboard-grid"></div>
+            </div>
+
+            <div id="status" class="status" role="status" aria-live="polite"></div>
+
+            <div class="history" aria-label="Histórico e estatísticas">
+              <div class="history-top">
+                <h2 class="history-title">Histórico</h2>
+                <div class="history-actions">
+                  <button id="btnResetStats" type="button" class="btn btn-ghost">Zerar estatísticas</button>
+                </div>
+              </div>
+
+              <div class="history-stats" aria-label="Estatísticas">
+                <div class="pill">
+                  <span class="pill-label">Vitórias / Derrotas</span>
+                  <strong id="wlRatio">0 / 0</strong>
+                </div>
+                <div class="pill">
+                  <span class="pill-label">% Vitórias</span>
+                  <strong id="winPct">0%</strong>
+                </div>
+                <div class="pill">
+                  <span class="pill-label">Média de tentativas (vitórias)</span>
+                  <strong id="avgAttemptsWin">-</strong>
+                </div>
+              </div>
+
+              <div id="historyList" class="history-list" aria-live="polite"></div>
+            </div>
+          </div>
+        </section>
+      </section>
+      </section>
+
+      <section id="casino" class="section hidden" aria-label="Cassino">
+        <div class="card">
+          <div class="section-head">
+            <h2>Cassino</h2>
+            <p class="sub">Aposte seus pontos em jogos rápidos.</p>
+          </div>
+
+          <div class="casino-grid">
+            <section class="casino-card" aria-label="Caça-níquel">
+              <div class="casino-title">
+                <h3>Slot</h3>
+                <p>3 símbolos. Combine para ganhar.</p>
+              </div>
+              <div class="casino-body">
+                <div class="slot-reels" id="slotReels" aria-label="Reels do slot">
+                  <span class="reel" data-reel="0">🍒</span>
+                  <span class="reel" data-reel="1">🍋</span>
+                  <span class="reel" data-reel="2">⭐</span>
+                </div>
+                <div class="controls">
+                  <input id="slotBet" class="input" inputmode="numeric" placeholder="Aposta" aria-label="Aposta do slot" />
+                  <button id="btnSlotSpin" class="btn" type="button">Girar</button>
+                </div>
+                <div id="slotMsg" class="mini-status" aria-live="polite"></div>
+              </div>
+            </section>
+
+            <section class="casino-card" aria-label="Blackjack">
+              <div class="casino-title">
+                <h3>Blackjack</h3>
+                <p>Chegue perto de 21 sem estourar.</p>
+              </div>
+              <div class="casino-body">
+                <div class="bj-table">
+                  <div>
+                    <div class="mini-label">Dealer</div>
+                    <div id="bjDealer" class="cards">-</div>
+                    <div id="bjDealerScore" class="mini-score"></div>
+                  </div>
+                  <div>
+                    <div class="mini-label">Você</div>
+                    <div id="bjPlayer" class="cards">-</div>
+                    <div id="bjPlayerScore" class="mini-score"></div>
+                  </div>
+                </div>
+
+                <div class="controls">
+                  <input id="bjBet" class="input" inputmode="numeric" placeholder="Aposta" aria-label="Aposta do blackjack" />
+                  <button id="btnBjDeal" class="btn btn-secondary" type="button">Dar cartas</button>
+                </div>
+                <div class="controls">
+                  <button id="btnBjHit" class="btn" type="button" disabled>Pedir</button>
+                  <button id="btnBjStand" class="btn btn-ghost" type="button" disabled>Parar</button>
+                </div>
+                <div id="bjMsg" class="mini-status" aria-live="polite"></div>
+              </div>
+            </section>
+
+            <section class="casino-card" aria-label="Roleta">
+              <div class="casino-title">
+                <h3>Roleta</h3>
+                <p>Escolha número ou par/ímpar. Cor é um bônus separado.</p>
+              </div>
+              <div class="casino-body">
+                <div class="roulette-result" id="rouletteResult">Resultado: -</div>
+                <div class="row row-roulette">
+                  <div class="form">
+                    <div class="label">Tipo de aposta</div>
+                    <select id="roulType" class="input" aria-label="Tipo de aposta">
+                      <option value="parity">Par/Ímpar</option>
+                      <option value="number">Número</option>
+                    </select>
+                  </div>
+                  <div class="form">
+                    <div class="label">Valor</div>
+                    <select id="roulParity" class="input" aria-label="Par ou ímpar">
+                      <option value="par">Par</option>
+                      <option value="impar">Ímpar</option>
+                    </select>
+                    <input
+                      id="roulNumber"
+                      class="input hidden"
+                      inputmode="numeric"
+                      placeholder="0-36"
+                      aria-label="Número (0-36)"
+                    />
+                  </div>
+                </div>
+
+                <div class="row row-roulette">
+                  <div class="form">
+                    <div class="label">Cor (bônus opcional)</div>
+                    <select id="roulColor" class="input" aria-label="Cor bônus">
+                      <option value="">Sem cor</option>
+                      <option value="vermelho">Vermelho</option>
+                      <option value="preto">Preto</option>
+                    </select>
+                  </div>
+                  <div class="form">
+                    <div class="label">Regras</div>
+                    <div class="help">
+                      Acertou <strong>tipo+valor</strong> e <strong>cor</strong>: ganha mais. Acertou só 1: devolve a aposta.
+                    </div>
+                  </div>
+                </div>
+                <div class="controls">
+                  <input id="roulBet" class="input" inputmode="numeric" placeholder="Aposta" aria-label="Aposta da roleta" />
+                  <button id="btnRoulSpin" class="btn" type="button">Girar</button>
+                </div>
+                <div id="roulMsg" class="mini-status" aria-live="polite"></div>
+              </div>
+            </section>
+          </div>
+        </div>
+      </section>
+
+      <section id="shop" class="section hidden" aria-label="Loja">
+        <div class="card">
+          <div class="section-head">
+            <h2>Loja</h2>
+            <p class="sub">Compre e aplique customizações com seus pontos.</p>
+          </div>
+
+          <div id="shopGrid" class="shop-grid" aria-live="polite"></div>
+          <div class="shop-foot">
+            <button id="btnResetCosmetics" class="btn btn-ghost" type="button">Resetar aparência</button>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <script src="./script.js"></script>
+  </body>
+</html>
